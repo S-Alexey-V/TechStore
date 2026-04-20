@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TechStore — E-commerce</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div class="app-shell">
+    <header class="ts-header">
+        <div class="container ts-header__inner">
+            <div class="ts-header__row">
+                <a href="#/catalog" class="ts-brand" data-link>
+                    <span class="ts-brand__mark" aria-hidden="true">T</span>
+                    <span class="ts-brand__text">TechStore</span>
+                </a>
+                <nav class="ts-nav ts-nav--desk" aria-label="Main">
+                    <a href="#/catalog" class="ts-nav__a" data-link>Products</a>
+                    <a href="#/catalog" class="ts-nav__a" data-link>Categories</a>
+                    <a href="#/catalog" class="ts-nav__a" data-link>Deals</a>
+                    <a href="#/catalog" class="ts-nav__a" data-link>About</a>
+                </nav>
+                <div class="ts-header__actions">
+                    <button type="button" class="ts-icon-btn" aria-label="Search">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </button>
+                    <a href="#/cart" class="ts-icon-btn ts-cart-link" data-link aria-label="Shopping cart">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+                        <span class="ts-badge" id="cart-badge" hidden>0</span>
+                    </a>
+                    <button type="button" class="ts-icon-btn ts-menu-btn" id="menu-toggle" aria-expanded="false" aria-label="Menu">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                </div>
+            </div>
+            <nav class="ts-nav-mob" id="mobile-nav" aria-label="Mobile">
+                <a href="#/catalog" class="ts-nav__a" data-link>Products</a>
+                <a href="#/catalog" class="ts-nav__a" data-link>Categories</a>
+                <a href="#/catalog" class="ts-nav__a" data-link>Deals</a>
+                <a href="#/catalog" class="ts-nav__a" data-link>About</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main" class="ts-main"></main>
+
+    <footer class="ts-footer">
+        <div class="container ts-footer__grid">
+            <div class="ts-footer__col">
+                <div class="ts-brand ts-brand--footer">
+                    <span class="ts-brand__mark" aria-hidden="true">T</span>
+                    <span class="ts-brand__text">TechStore</span>
+                </div>
+                <p class="ts-footer__text">Your trusted destination for premium electronics and tech accessories. Quality products, competitive prices, exceptional service.</p>
+                <div class="ts-social">
+                    <a href="#" class="ts-social__btn" aria-label="Facebook">f</a>
+                    <a href="#" class="ts-social__btn" aria-label="Twitter">t</a>
+                    <a href="#" class="ts-social__btn" aria-label="Instagram">in</a>
+                    <a href="#" class="ts-social__btn" aria-label="YouTube">▶</a>
+                </div>
+            </div>
+            <div class="ts-footer__col">
+                <h3 class="ts-footer__h">Quick Links</h3>
+                <ul class="ts-footer__list">
+                    <li><a href="#/catalog" data-link>Shop All Products</a></li>
+                    <li><a href="#/catalog" data-link>Special Deals</a></li>
+                    <li><a href="#/catalog" data-link>About Us</a></li>
+                    <li><a href="#/catalog" data-link>Contact Support</a></li>
+                </ul>
+            </div>
+            <div class="ts-footer__col">
+                <h3 class="ts-footer__h">Customer Service</h3>
+                <ul class="ts-footer__list">
+                    <li><a href="#">Shipping Information</a></li>
+                    <li><a href="#">Returns &amp; Exchanges</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Track Order</a></li>
+                </ul>
+                <p class="ts-footer__small">Customer Support:<br /><strong>1-800-TECH-SHOP</strong><br />support@techstore.com</p>
+            </div>
+            <div class="ts-footer__col">
+                <h3 class="ts-footer__h">Newsletter</h3>
+                <p class="ts-footer__text ts-footer__text--sm">Subscribe to get special offers, free giveaways, and updates.</p>
+                <form class="ts-news" action="#" onsubmit="return false">
+                    <input type="email" class="input" placeholder="Enter your email" />
+                    <button type="button" class="btn btn-add-lg">Subscribe</button>
+                </form>
+            </div>
+        </div>
+        <div class="container ts-footer__bottom">
+            <p>© 2026 TechStore. All rights reserved.</p>
+            <div class="ts-footer__legal">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
