@@ -1,5 +1,36 @@
+import { PRODUCTS, getProductById, uniqueCategories } from './products.js';
+
 const main = document.getElementById('main');
 const badge = document.getElementById('cart-badge');
+
+function formatPrice(n) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(n);
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function starsHtmlFixed(rating) {
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    let s = '<span class="stars">';
+    for (let i = 0; i < full; i += 1) s += '<span class="star star--full">★</span>';
+    if (half) s += '<span class="star star--half">★</span>';
+    for (let i = 0; i < empty; i += 1) s += '<span class="star star--empty">★</span>';
+    s += '</span>';
+    return s;
+}
 
 function parseRoute() {
     const hash = (location.hash || '#/catalog').replace(/^#/, '') || '/catalog';
