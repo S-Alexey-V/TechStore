@@ -110,6 +110,35 @@ function applyCatalogFilters(list) {
         return true;
     });
 
+    const s = catalogState.sort;
+    if (s === 'name-asc') out.sort((a, b) => a.name.localeCompare(b.name));
+    if (s === 'name-desc') out.sort((a, b) => b.name.localeCompare(a.name));
+    if (s === 'price-low') out.sort((a, b) => a.price - b.price);
+    if (s === 'price-high') out.sort((a, b) => b.price - a.price);
+    return out;
+}
+
+function cardHtml(p, inCartQty) {
+    const pid = String(p.id);
+    return `
+    <article class="ts-card">
+      <a href="#/product/${pid}" class="ts-card__media" data-product-link="${pid}">
+        <img src="${p.image}" alt="" loading="lazy" width="400" height="400" />
+      </a>
+      <div class="ts-card__body">
+        <a href="#/product/${pid}" class="ts-card__title" data-product-link="${pid}">${escapeHtml(p.name)}</a>
+        <div class="ts-card__rating">${starsHtmlFixed(p.rating)} <span class="rating-num">(${p.rating})</span></div>
+        <div class="ts-card__row">
+          <span class="ts-price">${formatPrice(p.price)}</span>
+          <span class="ts-cat">${escapeHtml(p.category)}</span>
+        </div>
+        <button type="button" class="btn btn-cart" data-add-cart="${pid}">Add to cart</button>
+        ${inCartQty > 0 ? `<p class="in-cart-hint">In cart: ${inCartQty}</p>` : ''}
+      </div>
+    </article>
+  `;
+}
+
     function parseRoute() {
         const hash = (location.hash || '#/catalog').replace(/^#/, '') || '/catalog';
         const parts = hash.split('/').filter(Boolean);
@@ -121,11 +150,6 @@ function applyCatalogFilters(list) {
 
     function navigate(path) {
         location.hash = path;
-    }
-
-    function renderCatalog() {
-        main.innerHTML =
-            '<div class="container ts-page-pad"><h1 class="cat-title">Premium Electronics</h1><p class="cat-lead">Day 1: hash route <code>#/catalog</code></p></div>';
     }
 
     function renderCart() {
