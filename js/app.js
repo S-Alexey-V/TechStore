@@ -504,12 +504,89 @@ function renderCart() {
     updateBadge();
 }
 
-    function renderProduct(id) {
-        main.innerHTML =
-            '<div class="container ts-page-pad"><h1 class="cat-title">Product</h1><p class="cat-lead" id="day1-product-slug"></p></div>';
-        const slot = document.getElementById('day1-product-slug');
-        if (slot) slot.textContent = id ? `Product id from URL: ${id}` : 'No id in URL';
+function renderProduct(id) {
+    const p = getProductById(id);
+    if (!p) {
+        main.innerHTML = `
+      <div class="page-gray ts-center-pad">
+        <div class="ts-center-block">
+          <h1 class="cat-title">Product Not Found</h1>
+          <a href="#/catalog" class="link-blue" data-link>Return to Catalog</a>
+        </div>
+      </div>`;
+        return;
     }
+
+    const { items } = loadCart();
+    const inCart = (items[String(p.id)] || 0) > 0;
+    const related = PRODUCTS.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 3);
+    let slideIndex = 0;
+    const imgs = p.images;
+
+    main.innerHTML = `
+    <div class="page-gray">
+      <div class="container ts-page-pad">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="#/catalog" data-link>Products</a>
+          <span class="bc-sep">/</span>
+          <span class="bc-muted">${escapeHtml(p.category)}</span>
+          <span class="bc-sep">/</span>
+          <span class="bc-current">${escapeHtml(p.name)}</span>
+        </nav>
+
+        <div class="prod-grid">
+          <div class="prod-gallery">
+            <div class="prod-main-wrap">
+              <img id="prod-main-img" class="prod-main-img" src="${imgs[0]}" alt="" />
+              ${
+        imgs.length > 1
+            ? `<button type="button" class="gal-nav gal-prev" id="gal-prev" aria-label="Previous">‹</button>
+                     <button type="button" class="gal-nav gal-next" id="gal-next" aria-label="Next">›</button>`
+            : ''
+    }
+            </div>
+            ${
+        imgs.length > 1
+            ? `<div class="prod-thumbs">${imgs
+                .map(
+                    (src, i) => `
+                <button type="button" class="prod-thumb ${i === 0 ? 'is-active' : ''}" data-idx="${i}">
+                  <img src="${src}" alt="" />
+                </button>`
+                )
+                .join('')}</div>`
+            : ''
+    }
+          </div>
+          <div class="prod-info">
+            <h1 class="prod-name">${escapeHtml(p.name)}</h1>
+            <div class="prod-rate-row">
+              ${starsHtmlFixed(p.rating)}
+              <span class="rating-num">(${p.rating})</span>
+              <span class="rev-hint">Based on 327 reviews</span>
+            </div>
+            <div class="prod-price-row">
+              <span class="prod-price-big">${formatPrice(p.price)}</span>
+              <span class="ship-note">Free shipping</span>
+            </div>
+            <div class="highlights">
+              <h3 class="highlights__t">Key Highlights</h3>
+              <ul class="highlights__list">
+                ${p.specs
+        .slice(0, 3)
+        .map(
+            (s) => `
+                  <li><span class="hl-dot"></span><span class="hl-label">${escapeHtml(s.label)}:</span> ${escapeHtml(s.value)}</li>`
+        )
+        .join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
     function setupHeaderMenu() {
         const btn = document.getElementById('menu-toggle');
