@@ -345,6 +345,19 @@ function renderCatalog() {
         location.hash = path;
     }
 
+function cartLines() {
+    const { items, promo } = loadCart();
+    const lines = [];
+    for (const [id, qty] of Object.entries(items)) {
+        const pr = getProductById(id);
+        if (pr && qty > 0) lines.push({ product: pr, qty });
+    }
+    const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+    const discount = promo === 'SAVE10' ? Math.round(subtotal * 0.1 * 100) / 100 : 0;
+    const total = Math.round((subtotal - discount) * 100) / 100;
+    return { lines, subtotal, discount, total, promo };
+}
+
     function renderCart() {
         main.innerHTML =
             '<div class="container ts-page-pad"><h1 class="cart-page-title">Shopping Cart</h1><p class="cat-lead">Day 1: hash route <code>#/cart</code></p></div>';
