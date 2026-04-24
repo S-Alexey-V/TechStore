@@ -1,38 +1,4 @@
 import { PRODUCTS, getProductById, uniqueCategories } from './products.js';
-
-const main = document.getElementById('main');
-const badge = document.getElementById('cart-badge');
-
-function formatPrice(n) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(n);
-}
-
-function escapeHtml(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-function starsHtmlFixed(rating) {
-    const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5 ? 1 : 0;
-    const empty = 5 - full - half;
-    let s = '<span class="stars">';
-    for (let i = 0; i < full; i += 1) s += '<span class="star star--full">★</span>';
-    if (half) s += '<span class="star star--half">★</span>';
-    for (let i = 0; i < empty; i += 1) s += '<span class="star star--empty">★</span>';
-    s += '</span>';
-    return s;
-}
-
-import { PRODUCTS, getProductById, uniqueCategories } from './products.js';
 import {
     loadCart,
     getTotalCount,
@@ -80,6 +46,10 @@ function updateBadge() {
         badge.textContent = '0';
     }
 }
+
+document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-link]')) queueMicrotask(updateBadge);
+});
 
 let catalogState = {
     sort: 'name-asc',
@@ -358,10 +328,181 @@ function cartLines() {
     return { lines, subtotal, discount, total, promo };
 }
 
-    function renderCart() {
-        main.innerHTML =
-            '<div class="container ts-page-pad"><h1 class="cart-page-title">Shopping Cart</h1><p class="cat-lead">Day 1: hash route <code>#/cart</code></p></div>';
+function renderCart() {
+    const { lines, subtotal, discount, total, promo } = cartLines();
+
+    if (lines.length === 0) {
+        main.innerHTML = `
+      <div class="page-gray ts-center-pad">
+        <div class="container ts-page-pad">
+          <div class="empty-cart-block">
+            <h1 class="cat-title">Your Cart is Empty</h1>
+            <p class="cat-lead">Add some amazing products to get started!</p>
+            <a href="#/catalog" class="btn btn-add-lg" data-link>Continue Shopping</a>
+          </div>
+        </div>
+      </div>`;
+        clearPromo();
+        updateBadge();
+        return;
     }
+
+    main.innerHTML = `
+    <div class="page-gray">
+      <div class="container ts-page-pad">
+        <h1 class="cart-page-title">Shopping Cart</h1>
+        <div class="cart-grid">
+          <div class="cart-lines">
+            ${lines
+        .map(
+            (l) => `
+              <div class="cart-line" data-row="${l.product.id}">
+                <div class="cart-line__img">
+                  <img src="${l.product.image}" alt="" />
+                </div>
+                <div class="cart-line__mid">
+                  <div class="cart-line__top">
+                    <div>
+                      <a href="#/product/${l.product.id}" class="cart-line__name" data-product-link="${l.product.id}">${escapeHtml(l.product.name)}</a>
+                      <p class="cart-line__cat">${escapeHtml(l.product.category)}</p>
+                    </div>
+                    <button type="button" class="icon-btn icon-btn--danger" data-remove="${l.product.id}" aria-label="Remove">×</button>
+                  </div>
+                  <div class="cart-line__bot">
+                    <div class="qty-row qty-row--sm">
+                      <button type="button" class="qty-square" data-dec="${l.product.id}" aria-label="Decrease">−</button>
+                      <span class="qty-val">${l.qty}</span>
+                      <button type="button" class="qty-square" data-inc="${l.product.id}" aria-label="Increase">+</button>
+                    </div>
+                    <div class="cart-line__prices">
+                      <p class="line-total">${formatPrice(l.product.price * l.qty)}</p>
+                      <p class="line-each">${formatPrice(l.product.price)} each</p>
+                    </div>
+                  </div>
+                </div>
+              </div>`
+        )
+        .join('')}
+          </div>
+          <aside class="order-summary">
+            <div class="order-card">
+              <h2 class="order-card__t">Order Summary</h2>
+              <div class="order-rows">
+                <div class="order-row"><span class="muted">Subtotal</span><span class="semi" id="sum-sub">${formatPrice(subtotal)}</span></div>
+                <div id="disc-row-wrap">${promo === 'SAVE10' ? `<div class="order-row order-row--disc"><span>Discount (SAVE10)</span><span class="disc">-${formatPrice(discount)}</span></div>` : ''}</div>
+                <div class="order-row order-total"><span>Total</span><span class="total-amt" id="sum-total">${formatPrice(total)}</span></div>
+              </div>
+              <form class="promo-block" id="promo-form">
+                <label class="promo-label">Promo Code</label>
+                <div class="promo-row">
+                  <input type="text" class="input" id="promo-input" placeholder="Enter code" autocomplete="off" ${promo === 'SAVE10' ? 'value="SAVE10" readonly' : ''} />
+                  <button type="submit" class="btn btn-dark" ${promo === 'SAVE10' ? 'disabled' : ''}>Apply</button>
+                </div>
+                <p class="promo-hint" id="promo-hint">${promo === 'SAVE10' ? '<span class="ok">Promo applied!</span>' : 'Try code "SAVE10" for 10% off'}</p>
+                <p class="promo-err" id="promo-error" hidden>Неверный промокод</p>
+              </form>
+              <button type="button" class="btn btn-add-lg btn-mt">Proceed to Checkout</button>
+            </div>
+            <div class="order-card ship-card">
+              <h3 class="ship-card__t">Shipping Information</h3>
+              <p class="ship-p"><strong>Delivery Address</strong><br/>123 Tech Street<br/>San Francisco, CA 94105</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  `;
+
+    const promoInput = document.getElementById('promo-input');
+    const promoError = document.getElementById('promo-error');
+    const promoHint = document.getElementById('promo-hint');
+
+    function refreshSummary() {
+        const s = cartLines();
+        document.getElementById('sum-sub').textContent = formatPrice(s.subtotal);
+        const wrap = document.getElementById('disc-row-wrap');
+        wrap.innerHTML =
+            s.promo === 'SAVE10'
+                ? `<div class="order-row order-row--disc"><span>Discount (SAVE10)</span><span class="disc">-${formatPrice(s.discount)}</span></div>`
+                : '';
+        document.getElementById('sum-total').textContent = formatPrice(s.total);
+        if (promoHint) {
+            promoHint.innerHTML =
+                s.promo === 'SAVE10' ? '<span class="ok">Promo applied!</span>' : 'Try code "SAVE10" for 10% off';
+        }
+    }
+
+    function redrawRows() {
+        const s = cartLines();
+        if (s.lines.length === 0) {
+            renderCart();
+            return;
+        }
+        s.lines.forEach((l) => {
+            const row = main.querySelector(`[data-row="${l.product.id}"]`);
+            if (!row) return;
+            row.querySelector('.qty-val').textContent = String(l.qty);
+            row.querySelector('.line-total').textContent = formatPrice(l.product.price * l.qty);
+        });
+        refreshSummary();
+        updateBadge();
+    }
+
+    main.querySelectorAll('[data-inc]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-inc');
+            const { items } = loadCart();
+            setItemQuantity(pid, (items[pid] || 0) + 1);
+            redrawRows();
+        });
+    });
+    main.querySelectorAll('[data-dec]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const pid = btn.getAttribute('data-dec');
+            const { items } = loadCart();
+            const next = (items[pid] || 0) - 1;
+            if (next <= 0) removeItem(pid);
+            else setItemQuantity(pid, next);
+            redrawRows();
+        });
+    });
+    main.querySelectorAll('[data-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            removeItem(btn.getAttribute('data-remove'));
+            redrawRows();
+        });
+    });
+
+    main.querySelectorAll('[data-product-link]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigate(`#/product/${el.getAttribute('data-product-link')}`);
+        });
+    });
+
+    const promoBtn = document.querySelector('#promo-form button[type="submit"]');
+    document.getElementById('promo-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        promoError.hidden = true;
+        const raw = promoInput.value.trim();
+        if (raw === '') return;
+        if (raw.toUpperCase() === 'SAVE10') {
+            setPromo('SAVE10');
+            promoInput.setAttribute('readonly', 'readonly');
+            if (promoBtn) promoBtn.disabled = true;
+            promoError.hidden = true;
+            refreshSummary();
+        } else {
+            setPromo(null);
+            promoInput.removeAttribute('readonly');
+            if (promoBtn) promoBtn.disabled = false;
+            promoError.hidden = false;
+            refreshSummary();
+        }
+    });
+
+    updateBadge();
+}
 
     function renderProduct(id) {
         main.innerHTML =
