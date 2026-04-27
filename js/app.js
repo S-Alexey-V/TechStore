@@ -36,6 +36,7 @@ function starsHtmlFixed(rating) {
     return s;
 }
 function updateBadge() {
+    if (!badge) return;
     const { items } = loadCart();
     const count = getTotalCount(items);
     if (count > 0) {
@@ -174,13 +175,13 @@ function wireFilterSidebar() {
     const minEl = document.getElementById('flt-min');
     const maxEl = document.getElementById('flt-max');
     if (minEl) {
-        minEl.addEventListener('input', () => {
+        minEl.addEventListener('change', () => {
             catalogState.priceMin = minEl.value;
             reRender();
         });
     }
     if (maxEl) {
-        maxEl.addEventListener('input', () => {
+        maxEl.addEventListener('change', () => {
             catalogState.priceMax = maxEl.value;
             reRender();
         });
@@ -324,12 +325,14 @@ function cartLines() {
     }
     const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
     const discount = promo === 'SAVE10' ? Math.round(subtotal * 0.1 * 100) / 100 : 0;
-    const total = Math.round((subtotal - discount) * 100) / 100;
-    return { lines, subtotal, discount, total, promo };
+    const taxedBase = Math.max(0, subtotal - discount);
+    const tax = Math.round(taxedBase * 0.08 * 100) / 100;
+    const total = Math.round((taxedBase + tax) * 100) / 100;
+    return { lines, subtotal, discount, tax, total, promo };
 }
 
 function renderCart() {
-    const { lines, subtotal, discount, total, promo } = cartLines();
+    const { lines, subtotal, discount, tax, total, promo } = cartLines();
 
     if (lines.length === 0) {
         main.innerHTML = `
@@ -338,7 +341,7 @@ function renderCart() {
           <div class="empty-cart-block">
             <h1 class="cat-title">Your Cart is Empty</h1>
             <p class="cat-lead">Add some amazing products to get started!</p>
-            <a href="#/catalog" class="btn btn-add-lg" data-link>Continue Shopping</a>
+            <a href="#/catalog" class="btn btn-add-lg" data-link>Вернуться в каталог</a>
           </div>
         </div>
       </div>`;
@@ -385,18 +388,19 @@ function renderCart() {
         .join('')}
           </div>
           <aside class="order-summary">
-            <div class="order-card">
+            <div class="order-card order-card--sticky">
               <h2 class="order-card__t">Order Summary</h2>
               <div class="order-rows">
                 <div class="order-row"><span class="muted">Subtotal</span><span class="semi" id="sum-sub">${formatPrice(subtotal)}</span></div>
                 <div id="disc-row-wrap">${promo === 'SAVE10' ? `<div class="order-row order-row--disc"><span>Discount (SAVE10)</span><span class="disc">-${formatPrice(discount)}</span></div>` : ''}</div>
+                <div class="order-row"><span class="muted">Tax (8%)</span><span class="semi" id="sum-tax">${formatPrice(tax)}</span></div>
                 <div class="order-row order-total"><span>Total</span><span class="total-amt" id="sum-total">${formatPrice(total)}</span></div>
               </div>
               <form class="promo-block" id="promo-form">
                 <label class="promo-label">Promo Code</label>
                 <div class="promo-row">
-                  <input type="text" class="input" id="promo-input" placeholder="Enter code" autocomplete="off" ${promo === 'SAVE10' ? 'value="SAVE10" readonly' : ''} />
-                  <button type="submit" class="btn btn-dark" ${promo === 'SAVE10' ? 'disabled' : ''}>Apply</button>
+                  <input type="text" class="input" id="promo-input" placeholder="Enter code" autocomplete="off" ${promo === 'SAVE10' ? 'value="SAVE10"' : ''} />
+                  <button type="submit" class="btn btn-dark">Apply</button>
                 </div>
                 <p class="promo-hint" id="promo-hint">${promo === 'SAVE10' ? '<span class="ok">Promo applied!</span>' : 'Try code "SAVE10" for 10% off'}</p>
                 <p class="promo-err" id="promo-error" hidden>Неверный промокод</p>
@@ -425,6 +429,7 @@ function renderCart() {
             s.promo === 'SAVE10'
                 ? `<div class="order-row order-row--disc"><span>Discount (SAVE10)</span><span class="disc">-${formatPrice(s.discount)}</span></div>`
                 : '';
+        document.getElementById('sum-tax').textContent = formatPrice(s.tax);
         document.getElementById('sum-total').textContent = formatPrice(s.total);
         if (promoHint) {
             promoHint.innerHTML =
@@ -480,22 +485,21 @@ function renderCart() {
         });
     });
 
-    const promoBtn = document.querySelector('#promo-form button[type="submit"]');
     document.getElementById('promo-form').addEventListener('submit', (e) => {
         e.preventDefault();
         promoError.hidden = true;
         const raw = promoInput.value.trim();
-        if (raw === '') return;
+        if (raw === '') {
+            setPromo(null);
+            refreshSummary();
+            return;
+        }
         if (raw.toUpperCase() === 'SAVE10') {
             setPromo('SAVE10');
-            promoInput.setAttribute('readonly', 'readonly');
-            if (promoBtn) promoBtn.disabled = true;
             promoError.hidden = true;
             refreshSummary();
         } else {
             setPromo(null);
-            promoInput.removeAttribute('readonly');
-            if (promoBtn) promoBtn.disabled = false;
             promoError.hidden = false;
             refreshSummary();
         }
@@ -518,10 +522,9 @@ function renderProduct(id) {
     }
 
     const { items } = loadCart();
-    const inCart = (items[String(p.id)] || 0) > 0;
-    const related = PRODUCTS.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 3);
+    const inCartQty = items[String(p.id)] || 0;
     let slideIndex = 0;
-    const imgs = p.images;
+    const imgs = Array.isArray(p.images) && p.images.length > 0 ? p.images : [p.image];
 
     main.innerHTML = `
     <div class="page-gray">
@@ -537,7 +540,7 @@ function renderProduct(id) {
         <div class="prod-grid">
           <div class="prod-gallery">
             <div class="prod-main-wrap">
-              <img id="prod-main-img" class="prod-main-img" src="${imgs[0]}" alt="" />
+              <img id="prod-main-img" class="prod-main-img" src="${imgs[0]}" alt="${escapeHtml(p.name)}" />
               ${
         imgs.length > 1
             ? `<button type="button" class="gal-nav gal-prev" id="gal-prev" aria-label="Previous">‹</button>
@@ -551,7 +554,7 @@ function renderProduct(id) {
                 .map(
                     (src, i) => `
                 <button type="button" class="prod-thumb ${i === 0 ? 'is-active' : ''}" data-idx="${i}">
-                  <img src="${src}" alt="" />
+                  <img src="${src}" alt="${escapeHtml(p.name)}" />
                 </button>`
                 )
                 .join('')}</div>`
@@ -581,11 +584,104 @@ function renderProduct(id) {
         .join('')}
               </ul>
             </div>
+            <div class="qty-block">
+              <label class="qty-label">Quantity</label>
+              <div class="qty-row">
+                <button type="button" class="qty-square" id="prod-dec" aria-label="Decrease quantity">−</button>
+                <span class="qty-val" id="prod-qty">1</span>
+                <button type="button" class="qty-square" id="prod-inc" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-add-lg" id="prod-add-btn">${inCartQty > 0 ? `In cart: ${inCartQty}` : 'Add to cart'}</button>
+            <div class="spec-acc" id="prod-acc">
+              <button type="button" class="spec-acc__btn" id="prod-acc-btn" aria-expanded="false">
+                <span>Description</span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              <div class="spec-acc__panel" id="prod-acc-panel" hidden>
+                <div class="spec-rows">
+                  ${p.specs
+        .map(
+            (s) => `
+                  <div class="spec-row">
+                    <span>${escapeHtml(s.label)}</span>
+                    <span>${escapeHtml(s.value)}</span>
+                  </div>`
+        )
+        .join('')}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   `;
+
+    const mainImg = document.getElementById('prod-main-img');
+    const thumbs = [...main.querySelectorAll('.prod-thumb')];
+    const qtyEl = document.getElementById('prod-qty');
+    const addBtn = document.getElementById('prod-add-btn');
+    const acc = document.getElementById('prod-acc');
+    const accBtn = document.getElementById('prod-acc-btn');
+    const accPanel = document.getElementById('prod-acc-panel');
+
+    function setActiveThumb() {
+        thumbs.forEach((el, idx) => {
+            el.classList.toggle('is-active', idx === slideIndex);
+        });
+    }
+
+    function showSlide(idx) {
+        if (!mainImg || imgs.length === 0) return;
+        slideIndex = (idx + imgs.length) % imgs.length;
+        mainImg.src = imgs[slideIndex];
+        setActiveThumb();
+    }
+
+    document.getElementById('gal-prev')?.addEventListener('click', () => {
+        showSlide(slideIndex - 1);
+    });
+
+    document.getElementById('gal-next')?.addEventListener('click', () => {
+        showSlide(slideIndex + 1);
+    });
+
+    thumbs.forEach((thumb, idx) => {
+        thumb.addEventListener('click', () => {
+            showSlide(idx);
+        });
+    });
+
+    let qty = 1;
+    document.getElementById('prod-inc')?.addEventListener('click', () => {
+        qty += 1;
+        if (qtyEl) qtyEl.textContent = String(qty);
+    });
+    document.getElementById('prod-dec')?.addEventListener('click', () => {
+        qty = Math.max(1, qty - 1);
+        if (qtyEl) qtyEl.textContent = String(qty);
+    });
+
+    addBtn?.addEventListener('click', () => {
+        const pid = String(p.id);
+        const { items: ci } = loadCart();
+        const next = (ci[pid] || 0) + qty;
+        setItemQuantity(pid, next);
+        addBtn.textContent = `In cart: ${next}`;
+        qty = 1;
+        if (qtyEl) qtyEl.textContent = '1';
+        updateBadge();
+    });
+
+    accBtn?.addEventListener('click', () => {
+        if (!acc || !accPanel) return;
+        const isOpen = acc.classList.toggle('is-open');
+        accPanel.hidden = !isOpen;
+        accBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    updateBadge();
 }
 
     function setupHeaderMenu() {
@@ -609,10 +705,7 @@ function renderProduct(id) {
         if (route.name === 'catalog') renderCatalog();
         else if (route.name === 'cart') renderCart();
         else if (route.name === 'product') renderProduct(route.id);
-        if (badge) {
-            badge.hidden = true;
-            badge.textContent = '0';
-        }
+        updateBadge();
     }
 
     setupHeaderMenu();

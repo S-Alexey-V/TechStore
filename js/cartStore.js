@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'shop_cart_techstore_v2';
+const STORAGE_KEY = 'shop_cart_techstore';
 
 function readRaw() {
     try {

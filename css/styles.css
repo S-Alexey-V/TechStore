@@ -1242,8 +1242,11 @@ a:hover {
     border: 1px solid var(--gray-200);
     background: #fff;
     padding: 1.5rem;
-    position: sticky;
-    top: 5.5rem;
+}
+
+.order-card--sticky {
+    position: static;
+    top: auto;
 }
 
 .order-card__t {
@@ -1338,6 +1341,11 @@ a:hover {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.ship-card {
+    position: static;
+    top: auto;
 }
 
 .ship-p {
